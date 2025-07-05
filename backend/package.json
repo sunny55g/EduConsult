@@ -1,0 +1,19 @@
+{
+  "name": "education-consultant-website",
+  "version": "1.0.0",
+  "description": "Simple education consultant website with MongoDB integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongodb": "^6.3.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "keywords": ["education", "consultant", "website", "mongodb"],
+  "author": "",
+  "license": "MIT"
+}

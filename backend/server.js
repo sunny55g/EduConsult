@@ -8,14 +8,14 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-    origin: ['https://your-netlify-site.netlify.app', 'http://localhost:3000', 'http://127.0.0.1:5500'],
+    origin: ['https://educonsultant.netlify.app/', 'http://localhost:3000', 'http://127.0.0.1:5500'],
     credentials: true
 }));
 app.use(express.json());
 
 // MongoDB connection
 let db;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://your-username:your-password@cluster0.mongodb.net/educonsult?retryWrites=true&w=majority';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://fury8739:sunny_55g@cluster0.k99xpde.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 
 MongoClient.connect(MONGODB_URI, {
     useUnifiedTopology: true,

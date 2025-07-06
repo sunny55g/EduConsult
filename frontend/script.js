@@ -16,27 +16,39 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 const hamburger = document.querySelector('.hamburger');
 const navMenu = document.querySelector('.nav-menu');
 
-hamburger.addEventListener('click', () => {
-    hamburger.classList.toggle('active');
-    navMenu.classList.toggle('active');
-});
+if (hamburger && navMenu) {
+    hamburger.addEventListener('click', () => {
+        hamburger.classList.toggle('active');
+        navMenu.classList.toggle('active');
+    });
 
-// Close mobile menu when clicking on a link
-document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
-    hamburger.classList.remove('active');
-    navMenu.classList.remove('active');
-}));
+    // Close mobile menu when clicking on a link
+    document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
+        hamburger.classList.remove('active');
+        navMenu.classList.remove('active');
+    }));
+}
 
 // Contact form submission
 document.getElementById('contactForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
+    // Get form elements
+    const nameField = document.getElementById('name');
+    const emailField = document.getElementById('email');
+    const phoneField = document.getElementById('phone');
+    const messageField = document.getElementById('message');
+    const submitBtn = document.querySelector('.submit-btn');
+    
+    // Disable submit button during submission
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+    
     const formData = {
-        name: document.getElementById('name').value,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value,
-        service: document.getElementById('service').value,
-        message: document.getElementById('message').value,
+        name: nameField.value,
+        email: emailField.value,
+        phone: phoneField.value,
+        message: messageField.value,
         timestamp: new Date().toISOString()
     };
 
@@ -51,32 +63,53 @@ document.getElementById('contactForm').addEventListener('submit', async function
 
         if (response.ok) {
             // Show success message
-            const successMessage = document.getElementById('successMessage');
-            successMessage.classList.add('show');
+            showSuccessMessage();
             
             // Reset form
             document.getElementById('contactForm').reset();
-            
-            // Hide success message after 3 seconds
-            setTimeout(() => {
-                successMessage.classList.remove('show');
-            }, 3000);
         } else {
             throw new Error('Failed to submit form');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('There was an error submitting your message. Please try again.');
+        alert('There was an error submitting your message. Please try again or contact us directly.');
+    } finally {
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Message';
     }
 });
+
+// Function to show success message
+function showSuccessMessage() {
+    // Create success message element if it doesn't exist
+    let successMessage = document.getElementById('successMessage');
+    if (!successMessage) {
+        successMessage = document.createElement('div');
+        successMessage.id = 'successMessage';
+        successMessage.className = 'success-message';
+        successMessage.innerHTML = '<p>Thank you! Your message has been sent successfully.</p>';
+        document.body.appendChild(successMessage);
+    }
+    
+    // Show the message
+    successMessage.classList.add('show');
+    
+    // Hide success message after 5 seconds
+    setTimeout(() => {
+        successMessage.classList.remove('show');
+    }, 5000);
+}
 
 // Navbar background change on scroll
 window.addEventListener('scroll', () => {
     const navbar = document.querySelector('.navbar');
-    if (window.scrollY > 100) {
-        navbar.style.background = 'rgba(255, 255, 255, 0.98)';
-    } else {
-        navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+    if (navbar) {
+        if (window.scrollY > 100) {
+            navbar.style.background = 'rgba(255, 255, 255, 0.98)';
+        } else {
+            navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+        }
     }
 });
 

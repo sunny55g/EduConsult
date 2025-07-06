@@ -8,7 +8,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'https://educonsultant.netlify.app/', // ✅ Replace with your real Netlify URL
+  methods: ['GET', 'POST']
+}));
 app.use(express.json());
 app.use(express.static('.'));
 
@@ -29,7 +32,9 @@ async function connectToMongoDB() {
 
 // Routes
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+  res.send('🎉 EduConsult Backend is live on Render!');
+  // Or redirect:
+  // res.redirect('https://your-site.netlify.app');
 });
 
 // Contact form submission endpoint

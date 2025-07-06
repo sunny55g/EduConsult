@@ -64,7 +64,7 @@ app.post('/api/contact', async (req, res) => {
             name: name.trim(),
             email: email.trim().toLowerCase(),
             phone: phone.trim(),
-            service: service.trim(),
+            // service: service.trim(),
             message: message.trim(),
             timestamp: new Date(),
             status: 'new',
@@ -78,7 +78,7 @@ app.post('/api/contact', async (req, res) => {
             id: result.insertedId,
             name: contactData.name,
             email: contactData.email,
-            service: contactData.service,
+            // service: contactData.service,
             timestamp: contactData.timestamp
         });
 

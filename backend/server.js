@@ -1,93 +1,216 @@
 const express = require('express');
-const { MongoClient } = require('mongodb');
 const cors = require('cors');
-const path = require('path');
+const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: 'https://educonsultant.netlify.app/', // ✅ Replace with your real Netlify URL
-  methods: ['GET', 'POST']
+    origin: ['https://your-netlify-site.netlify.app', 'http://localhost:3000', 'http://127.0.0.1:5500'],
+    credentials: true
 }));
 app.use(express.json());
-app.use(express.static('.'));
 
 // MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/educonsult';
 let db;
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://your-username:your-password@cluster0.mongodb.net/educonsult?retryWrites=true&w=majority';
 
-async function connectToMongoDB() {
-    try {
-        const client = new MongoClient(MONGODB_URI);
-        await client.connect();
-        db = client.db('educonsult');
-        console.log('Connected to MongoDB');
-    } catch (error) {
-        console.error('MongoDB connection error:', error);
-    }
-}
-
-// Routes
-app.get('/', (req, res) => {
-  res.send('🎉 EduConsult Backend is live on Render!');
-  // Or redirect:
-  // res.redirect('https://your-site.netlify.app');
+MongoClient.connect(MONGODB_URI, {
+    useUnifiedTopology: true,
+})
+.then(client => {
+    console.log('Connected to MongoDB');
+    db = client.db('educonsult');
+})
+.catch(error => {
+    console.error('MongoDB connection error:', error);
 });
 
-// Contact form submission endpoint
+// Health check endpoint
+app.get('/', (req, res) => {
+    res.json({ 
+        message: 'EduConsult API is running!',
+        status: 'success',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Contact form endpoint
 app.post('/api/contact', async (req, res) => {
     try {
-        const { name, email, phone, service, message, timestamp } = req.body;
+        const { name, email, phone, service, message } = req.body;
         
         // Validate required fields
-        if (!name || !email || !service || !message) {
-            return res.status(400).json({ error: 'Missing required fields' });
+        if (!name || !email || !phone || !service || !message) {
+            return res.status(400).json({
+                success: false,
+                message: 'All fields are required'
+            });
         }
 
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid email format'
+            });
+        }
+
+        // Create contact document
+        const contactData = {
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            phone: phone.trim(),
+            service: service.trim(),
+            message: message.trim(),
+            timestamp: new Date(),
+            status: 'new',
+            ip: req.ip || req.connection.remoteAddress
+        };
+
         // Insert into MongoDB
-        const result = await db.collection('contacts').insertOne({
-            name,
-            email,
-            phone: phone || '',
-            service,
-            message,
-            timestamp: timestamp || new Date().toISOString(),
-            status: 'new'
+        const result = await db.collection('contacts').insertOne(contactData);
+        
+        console.log('New contact form submission:', {
+            id: result.insertedId,
+            name: contactData.name,
+            email: contactData.email,
+            service: contactData.service,
+            timestamp: contactData.timestamp
         });
 
-        console.log('Contact form submitted:', { name, email, service });
-        
-        res.status(200).json({ 
-            success: true, 
+        res.status(201).json({
+            success: true,
             message: 'Contact form submitted successfully',
             id: result.insertedId
         });
+
     } catch (error) {
-        console.error('Error saving contact:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Error saving contact form:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error. Please try again later.'
+        });
     }
 });
 
-// Get all contacts (for admin purposes)
+// Get all contacts (for admin use)
 app.get('/api/contacts', async (req, res) => {
     try {
-        const contacts = await db.collection('contacts').find({}).sort({ timestamp: -1 }).toArray();
-        res.json(contacts);
+        const contacts = await db.collection('contacts')
+            .find({})
+            .sort({ timestamp: -1 })
+            .toArray();
+        
+        res.json({
+            success: true,
+            count: contacts.length,
+            data: contacts
+        });
     } catch (error) {
         console.error('Error fetching contacts:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching contacts'
+        });
     }
 });
 
-// Start server
-async function startServer() {
-    await connectToMongoDB();
-    app.listen(PORT, () => {
-        console.log(`Server running on http://localhost:${PORT}`);
-    });
-}
+// Get contact by ID
+app.get('/api/contacts/:id', async (req, res) => {
+    try {
+        const { ObjectId } = require('mongodb');
+        const contact = await db.collection('contacts')
+            .findOne({ _id: new ObjectId(req.params.id) });
+        
+        if (!contact) {
+            return res.status(404).json({
+                success: false,
+                message: 'Contact not found'
+            });
+        }
+        
+        res.json({
+            success: true,
+            data: contact
+        });
+    } catch (error) {
+        console.error('Error fetching contact:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching contact'
+        });
+    }
+});
 
-startServer();
+// Update contact status
+app.patch('/api/contacts/:id/status', async (req, res) => {
+    try {
+        const { ObjectId } = require('mongodb');
+        const { status } = req.body;
+        
+        const validStatuses = ['new', 'contacted', 'in-progress', 'completed', 'closed'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid status'
+            });
+        }
+        
+        const result = await db.collection('contacts')
+            .updateOne(
+                { _id: new ObjectId(req.params.id) },
+                { 
+                    $set: { 
+                        status: status,
+                        updatedAt: new Date()
+                    }
+                }
+            );
+        
+        if (result.matchedCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Contact not found'
+            });
+        }
+        
+        res.json({
+            success: true,
+            message: 'Contact status updated successfully'
+        });
+    } catch (error) {
+        console.error('Error updating contact status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating contact status'
+        });
+    }
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({
+        success: false,
+        message: 'Something went wrong!'
+    });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Route not found'
+    });
+});
+
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+});
+
+module.exports = app;

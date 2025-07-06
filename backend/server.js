@@ -40,10 +40,10 @@ app.get('/', (req, res) => {
 // Contact form endpoint
 app.post('/api/contact', async (req, res) => {
     try {
-        const { name, email, phone, service, message } = req.body;
+        const { name, email, phone, message } = req.body;
         
         // Validate required fields
-        if (!name || !email || !phone || !service || !message) {
+        if (!name || !email || !phone || !message) {
             return res.status(400).json({
                 success: false,
                 message: 'All fields are required'

@@ -52,6 +52,16 @@ document.getElementById('contactForm').addEventListener('submit', async function
         timestamp: new Date().toISOString()
     };
 
+    // WhatsApp number (with country code, no + or spaces)
+    const whatsappNumber = '919587322021';
+    // Create WhatsApp message
+    const whatsappMessage = `Name: ${formData.name}%0AEmail: ${formData.email}%0APhone: ${formData.phone}%0AMessage: ${formData.message}`;
+    // WhatsApp URL
+    const whatsappURL = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+
+    // Open WhatsApp in a new tab
+    window.open(whatsappURL, '_blank');
+
     try {
         const response = await fetch('https://educonsult.onrender.com/api/contact', {
             method: 'POST',
@@ -64,7 +74,6 @@ document.getElementById('contactForm').addEventListener('submit', async function
         if (response.ok) {
             // Show success message
             showSuccessMessage();
-            
             // Reset form
             document.getElementById('contactForm').reset();
         } else {
